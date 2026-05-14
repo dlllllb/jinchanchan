@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>金铲铲知识空间 - 后台管理</title>
+    <style>
+        :root {
+            --bg-dark: #1a1a2e;
+            --bg-medium: #262640;
+            --bg-light: #3a3a5e;
+            --primary: #FF9800;
+            --text-primary: #e0e0e0;
+            --text-secondary: #888;
+            --success: #4CAF50;
+            --danger: #f44336;
+            --warning: #FFC107;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 240px;
+            height: 100vh;
+            background: var(--bg-medium);
+            border-right: 2px solid #333;
+            padding: 20px;
+            overflow-y: auto;
+            z-index: 100;
+        }
+        .sidebar h2 {
+            color: var(--primary);
+            font-size: 20px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .sidebar .subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+        }
+        .nav-item {
+            padding: 12px 15px;
+            margin: 5px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-secondary);
+        }
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255,152,0,0.15);
+            color: var(--primary);
+        }
+        .nav-item.active {
+            border-left: 3px solid var(--primary);
+        }
+        .main-content {
+            margin-left: 240px;
+            padding: 30px;
+        }
+        .page-header {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #333;
+        }
+        .page-header h2 { font-size: 24px; color: var(--primary); }
+        .page-header p { color: var(--text-secondary); font-size: 14px; margin-top: 5px; }
+        .section {
+            background: var(--bg-medium);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+        }
+        .section h3 { font-size: 18px; margin-bottom: 15px; color: var(--primary); }
+        
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: var(--bg-dark);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #333;
+        }
+        .stat-card .number {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        .stat-card .label { font-size: 14px; color: var(--text-secondary); margin-top: 5px; }
+        
+        /* 表格样式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+        th { color: var(--primary); font-weight: bold; background: var(--bg-dark); }
+        tr:hover { background: rgba(255,152,0,0.05); }
+        
+        /* 编辑区 */
+        .edit-form {
+            background: var(--bg-dark);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--bg-medium);
+            border: 2px solid #444;
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        .form-group textarea { min-height: 80px; resize: vertical; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .btn-primary { background: var(--primary); color: #1a1a2e; font-weight: bold; }
+        .btn-primary:hover { background: #e68900; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: #d32f2f; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #388e3c; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        
+        .action-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .valid-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        .valid-badge.ok { background: rgba(76,175,80,0.2); color: var(--success); }
+        .valid-badge.warn { background: rgba(255,152,0,0.2); color: var(--warning); }
+        .valid-badge.err { background: rgba(244,67,54,0.2); color: var(--danger); }
+        
+        .data-source {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: var(--bg-dark);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .data-source .info { flex: 1; }
+        .data-source .title { font-size: 16px; color: var(--primary); margin-bottom: 5px; }
+        .data-source .desc { font-size: 13px; color: var(--text-secondary); }
+        .data-source .status {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status.synced { background: rgba(76,175,80,0.2); color: var(--success); }
+        .status.unsynced { background: rgba(255,152,0,0.2); color: var(--warning); }
+        
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; height: auto; position: relative; padding: 15px; }
+            .main-content { margin-left: 0; padding: 15px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>🧠 知识空间</h2>
+        <div class="subtitle">金铲铲 S17 后台数据管理</div>
+        <hr style="border-color:#333;margin-bottom:15px;">
+        <div class="nav-item active" onclick="switchAdminTab('dashboard',this)">
+            📊 数据概览
+        </div>
+        <div class="nav-item" onclick="switchAdminTab('compositions',this)">
+            🎮 阵容管理
+        </div>
+        <div class="nav-item" onclick="switchAdminTab('items',this)">
+            🛡️ 装备管理
+        </div>
+        <div class="nav-item" onclick="switchAdminTab('traits',this)">
+            🔗 羁绊管理
+        </div>
+        <div class="nav-item" onclick="switchAdminTab('hexes',this)">
+            📜 符文管理
+        </div>
+        <div class="nav-item" onclick="switchAdminTab('champions',this)">
+            👤 英雄管理
+        </div>
+        <div class="nav-item" onclick="switchAdminTab('validation',this)">
+            ✅ 数据验证
+        </div>
+        <hr style="border-color:#333;margin:15px 0;">
+        <div class="nav-item" onclick="window.open('index.html','_blank')">
+            🔗 打开前端网站
+        </div>
+        <div class="nav-item" onclick="exportData()">
+            💾 导出数据
+        </div>
+    </div>
+    
+    <div class="main-content">
+        <!-- 数据概览 -->
+        <div id="admin-dashboard" class="admin-page active">
+            <div class="page-header">
+                <h2>📊 数据概览</h2>
+                <p>知识空间当前状态一览</p>
+            </div>
+            <div class="stats-grid" id="stats-grid">
+                <!-- 由JS动态填充 -->
+            </div>
+            <div class="data-source">
+                <div class="info">
+                    <div class="title">数据源状态</div>
+                    <div class="desc">当前数据通过 data.js 静态文件管理，建议通过知识空间后台编辑后导出更新</div>
+                </div>
+                <span class="status synced">✅ 数据可用</span>
+            </div>
+            <div class="section">
+                <h3>操作建议</h3>
+                <ol style="padding-left:20px;line-height:2;color:var(--text-secondary);">
+                    <li>新赛季/版本更新 → 先在「阵容管理」中检查并更新阵容数据</li>
+                    <li>新英雄/新装备 → 在对应管理模块添加数据</li>
+                    <li>数据验证 → 使用「数据验证」工具检查阵容完整性和一致性</li>
+                    <li>导出数据 → 数据确认无误后导出，替换前端 data.js</li>
+                </ol>
+            </div>
+        </div>
+        
+        <!-- 阵容管理 -->
+        <div id="admin-compositions" class="admin-page">
+            <div class="page-header">
+                <h2>🎮 阵容管理</h2>
+                <p>管理所有阵容数据，编辑、验证、更新</p>
+            </div>
+            <div class="action-bar">
+                <button class="btn btn-primary" onclick="showAddCompForm()">+ 添加阵容</button>
+                <button class="btn btn-success" onclick="runCompValidation()">🔍 验证所有阵容</button>
+            </div>
+            <div class="section">
+                <input type="text" id="comp-filter" placeholder="搜索阵容..." oninput="renderCompTable()" style="width:100%;padding:10px;background:var(--bg-dark);border:2px solid #444;border-radius:6px;color:var(--text-primary);margin-bottom:15px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>梯度</th>
+                            <th>难度</th>
+                            <th>核心羁绊</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="comp-table-body">
+                        <!-- 由JS动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="comp-edit-area" style="display:none;"></div>
+        </div>
+        
+        <!-- 装备管理 -->
+        <div id="admin-items" class="admin-page">
+            <div class="page-header">
+                <h2>🛡️ 装备管理</h2>
+                <p>管理装备数据</p>
+            </div>
+            <div class="action-bar">
+                <button class="btn btn-primary" onclick="showAddItemForm()">+ 添加装备</button>
+            </div>
+            <div class="section">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>类型</th>
+                            <th>属性</th>
+                            <th>合成配方</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="item-table-body">
+                        <!-- 由JS动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- 羁绊管理 -->
+        <div id="admin-traits" class="admin-page">
+            <div class="page-header">
+                <h2>🔗 羁绊管理</h2>
+                <p>管理种族和职业羁绊数据</p>
+            </div>
+            <div class="action-bar">
+                <button class="btn btn-primary" onclick="showAddTraitForm()">+ 添加羁绊</button>
+            </div>
+            <div class="section">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>类型</th>
+                            <th>等级</th>
+                            <th>效果描述</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trait-table-body">
+                        <!-- 由JS动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- 符文管理 -->
+        <div id="admin-hexes" class="admin-page">
+            <div class="page-header">
+                <h2>📜 符文管理</h2>
+                <p>管理三级强化符文数据（白银/黄金/彩色）</p>
+            </div>
+            <div class="action-bar">
+                <button class="btn btn-primary" onclick="showAddHexForm()">+ 添加符文</button>
+            </div>
+            <div class="section">
+                <div class="form-group" style="max-width:300px;">
+                    <label>筛选符文等级</label>
+                    <select onchange="renderHexTable(this.value)">
+                        <option value="all">全部</option>
+                        <option value="silver">白银</option>
+                        <option value="gold">黄金</option>
+                        <option value="prismatic">彩色</option>
+                    </select>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>等级</th>
+                            <th>类型</th>
+                            <th>效果</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="hex-table-body">
+                        <!-- 由JS动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- 英雄管理 -->
+        <div id="admin-champions" class="admin-page">
+            <div class="page-header">
+                <h2>👤 英雄管理</h2>
+                <p>管理英雄数据</p>
+            </div>
+            <div class="action-bar">
+                <button class="btn btn-primary" onclick="showAddChampionForm()">+ 添加英雄</button>
+            </div>
+            <div class="section">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>费用</th>
+                            <th>种族羁绊</th>
+                            <th>职业羁绊</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="champion-table-body">
+                        <!-- 由JS动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- 数据验证 -->
+        <div id="admin-validation" class="admin-page">
+            <div class="page-header">
+                <h2>✅ 数据验证</h2>
+                <p>检查阵容数据的完整性和一致性</p>
+            </div>
+            <div class="action-bar">
+                <button class="btn btn-primary" onclick="runFullValidation()">运行完整验证</button>
+            </div>
+            <div class="section" id="validation-results">
+                <p style="color:var(--text-secondary);">点击「运行完整验证」按钮开始检测</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 加载数据
+        let adminData = { compositions: [], items: [], traits: [], hexes: {silver:[],gold:[],prismatic:[]}, champions: [] };
+        
+        // 从第3方数据(全局window对象)加载
+        function loadAdminData() {
+            // 先加载 data.js 中的数据
+            adminData.compositions = window.compositions || [];
+            adminData.items = window.items || [];
+            adminData.traits = window.traits || [];
+            adminData.hexes = window.hexes || {silver:[],gold:[],prismatic:[]};
+            adminData.champions = window.champions || [];
+            updateStats();
+        }
+        
+        // 切换标签
+        function switchAdminTab(tabName, el) {
+            document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
+            document.getElementById('admin-' + tabName).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            if (el) el.classList.add('active');
+            renderCurrentTab(tabName);
+        }
+        
+        function renderCurrentTab(tabName) {
+            switch(tabName) {
+                case 'dashboard': updateStats(); break;
+                case 'compositions': renderCompTable(); break;
+                case 'items': renderItemTable(); break;
+                case 'traits': renderTraitTable(); break;
+                case 'hexes': renderHexTable('all'); break;
+                case 'champions': renderChampionTable(); break;
+                case 'validation': break;
+            }
+        }
+        
+        // ====== 数据概览 ======
+        function updateStats() {
+            const totalComps = adminData.compositions.length;
+            const totalItems = adminData.items.length;
+            const totalTraits = adminData.traits.length;
+            const totalHexes = (adminData.hexes.silver.length + adminData.hexes.gold.length + adminData.hexes.prismatic.length);
+            const totalChamps = adminData.champions.length;
+            
+            const filter = document.getElementById('comp-filter');
+            if (filter) filter.value = '';
+            
+            document.getElementById('stats-grid').innerHTML = `
+                <div class="stat-card"><div class="number">${totalComps}</div><div class="label">阵容数</div></div>
+                <div class="stat-card"><div class="number">${totalItems}</div><div class="label">装备数</div></div>
+                <div class="stat-card"><div class="number">${totalTraits}</div><div class="label">羁绊数</div></div>
+                <div class="stat-card"><div class="number">${totalHexes}</div><div class="label">符文数</div></div>
+                <div class="stat-card"><div class="number">${totalChamps}</div><div class="label">英雄数</div></div>
+            `;
+        }
+        
+        // ====== 阵容管理 ======
+        function renderCompTable() {
+            const filter = document.getElementById('comp-filter');
+            const q = filter ? filter.value.toLowerCase() : '';
+            const tbody = document.getElementById('comp-table-body');
+            let html = '';
+            adminData.compositions.forEach(comp => {
+                if (q && !comp.name.toLowerCase().includes(q) && !comp.traits.some(t => t.includes(q))) return;
+                const validStatus = checkCompValidity(comp);
+                html += `<tr>
+                    <td>${comp.name}</td>
+                    <td><span class="comp-tier ${comp.tier.replace('.','')}" style="padding:3px 10px;border-radius:12px;font-size:12px;font-weight:bold;background:${comp.tier === 'T0' ? '#f44336' : comp.tier === 'T0.5' ? '#FF9800' : '#2196F3'};color:white;">${comp.tier}</span></td>
+                    <td>${comp.difficulty}</td>
+                    <td>${comp.traits.map(t => '<span style="padding:2px 8px;border-radius:10px;font-size:11px;background:#333;margin:2px;">' + getTraitName(t) + '</span>').join(' ')}</td>
+                    <td><span class="valid-badge ${validStatus}">${validStatus === 'ok' ? '✅ 完整' : validStatus === 'warn' ? '⚠️ 部分缺失' : '❌ 数据问题'}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="editComp('${comp.id}')">编辑</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteComp('${comp.id}')">删除</button>
+                    </td>
+                </tr>`;
+            });
+            tbody.innerHTML = html || '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);">无数据</td></tr>';
+        }
+        
+        function getTraitName(id) {
+            const t = adminData.traits.find(t => t.id === id);
+            return t ? t.name : id;
+        }
+        
+        function checkCompValidity(comp) {
+            // 检查阵容完整性
+            let issues = 0;
+            if (!comp.name || !comp.description) issues++;
+            if (!comp.traits || comp.traits.length === 0) issues++;
+            if (!comp.position || !comp.position.front || !comp.position.middle || !comp.position.back) issues++;
+            if (!comp.equipment) issues++;
+            if (!comp.earlyGame || !comp.midGame || !comp.lateGame) issues++;
+            if (!comp.source || !comp.updateTime) issues++;
+            if (issues === 0) return 'ok';
+            if (issues <= 2) return 'warn';
+            return 'err';
+        }
+        
+        function editComp(id) {
+            const comp = adminData.compositions.find(c => c.id === id);
+            if (!comp) return;
+            const area = document.getElementById('comp-edit-area');
+            area.style.display = 'block';
+            area.innerHTML = `
+                <div class="edit-form">
+                    <h4 style="margin-bottom:15px;">编辑阵容: ${comp.name}</h4>
+                    <div class="form-group"><label>名称</label><input id="comp-name" value="${comp.name}"></div>
+                    <div class="form-group"><label>梯度</label><select id="comp-tier"><option ${comp.tier==='T0'?'selected':''}>T0</option><option ${comp.tier==='T0.5'?'selected':''}>T0.5</option><option ${comp.tier==='T1'?'selected':''}>T1</option><option ${comp.tier==='T2'?'selected':''}>T2</option></select></div>
+                    <div class="form-group"><label>难度</label><select id="comp-difficulty"><option ${comp.difficulty==='简单'?'selected':''}>简单</option><option ${comp.difficulty==='中等'?'selected':''}>中等</option><option ${comp.difficulty==='困难'?'selected':''}>困难</option></select></div>
+                    <div class="form-group"><label>描述</label><textarea id="comp-desc">${comp.description || ''}</textarea></div>
+                    <div class="form-group"><label>羁绊（逗号分隔）</label><input id="comp-traits" value="${(comp.traits||[]).join(',')}"></div>
+                    <div class="form-group"><label>核心英雄（逗号分隔）</label><input id="comp-main" value="${(comp.mainChampions||[]).join(',')}"></div>
+                    <div class="form-group"><label>前期运营</label><textarea id="comp-early">${comp.earlyGame || ''}</textarea></div>
+                    <div class="form-group"><label>中期运营</label><textarea id="comp-mid">${comp.midGame || ''}</textarea></div>
+                    <div class="form-group"><label>后期运营</label><textarea id="comp-late">${comp.lateGame || ''}</textarea></div>
+                    <div class="form-group"><label>前排站位（逗号分隔）</label><input id="comp-front" value="${(comp.position?.front||[]).join(',')}"></div>
+                    <div class="form-group"><label>中排站位（逗号分隔）</label><input id="comp-mid-pos" value="${(comp.position?.middle||[]).join(',')}"></div>
+                    <div class="form-group"><label>后排站位（逗号分隔）</label><input id="comp-back" value="${(comp.position?.back||[]).join(',')}"></div>
+                    <div class="form-group"><label>推荐星神</label><input id="comp-stargod" value="${comp.starGod || ''}"></div>
+                    <div class="form-group"><label>推荐星座</label><input id="comp-constellation" value="${comp.constellation || ''}"></div>
+                    <div class="form-group"><label>推荐符文（逗号分隔）</label><input id="comp-hexes" value="${(comp.hexes||[]).join(',')}"></div>
+                    <div class="form-group"><label>数据来源</label><input id="comp-source" value="${comp.source || ''}"></div>
+                    <div class="form-group"><label>更新时间</label><input id="comp-update" value="${comp.updateTime || ''}"></div>
+                    <button class="btn btn-primary" onclick="saveComp('${id}')">保存</button>
+                    <button class="btn btn-danger" onclick="document.getElementById('comp-edit-area').style.display='none'">取消</button>
+                </div>
+            `;
+        }
+        
+        function saveComp(id) {
+            const comp = adminData.compositions.find(c => c.id === id);
+            if (!comp) return;
+            comp.name = document.getElementById('comp-name').value;
+            comp.tier = document.getElementById('comp-tier').value;
+            comp.difficulty = document.getElementById('comp-difficulty').value;
+            comp.description = document.getElementById('comp-desc').value;
+            comp.traits = document.getElementById('comp-traits').value.split(',').map(s => s.trim()).filter(Boolean);
+            comp.mainChampions = document.getElementById('comp-main').value.split(',').map(s => s.trim()).filter(Boolean);
+            comp.earlyGame = document.getElementById('comp-early').value;
+            comp.midGame = document.getElementById('comp-mid').value;
+            comp.lateGame = document.getElementById('comp-late').value;
+            if (!comp.position) comp.position = {};
+            comp.position.front = document.getElementById('comp-front').value.split(',').map(s => s.trim()).filter(Boolean);
+            comp.position.middle = document.getElementById('comp-mid-pos').value.split(',').map(s => s.trim()).filter(Boolean);
+            comp.position.back = document.getElementById('comp-back').value.split(',').map(s => s.trim()).filter(Boolean);
+            comp.starGod = document.getElementById('comp-stargod').value;
+            comp.constellation = document.getElementById('comp-constellation').value;
+            comp.hexes = document.getElementById('comp-hexes').value.split(',').map(s => s.trim()).filter(Boolean);
+            comp.source = document.getElementById('comp-source').value;
+            comp.updateTime = document.getElementById('comp-update').value;
+            document.getElementById('comp-edit-area').style.display = 'none';
+            renderCompTable();
+            alert('阵容已更新！请通过「导出数据」同步到前端 data.js');
+        }
+        
+        function deleteComp(id) {
+            if (confirm('确认删除该阵容？')) {
+                adminData.compositions = adminData.compositions.filter(c => c.id !== id);
+                renderCompTable();
+                updateStats();
+            }
+        }
+        
+        function showAddCompForm() {
+            const id = 'comp_' + Date.now();
+            adminData.compositions.push({
+                id: id, name: '新阵容', tier: 'T1', difficulty: '中等',
+                description: '请编辑描述', traits: [], mainChampions: [],
+                position: {front:[],middle:[],back:[]}, equipment: {},
+                earlyGame: '', midGame: '', lateGame: '',
+                starGod: '', constellation: '', hexes: [],
+                source: '知识空间', updateTime: new Date().toISOString().slice(0,10)
+            });
+            editComp(id);
+        }
+        
+        // ====== 装备管理 ======
+        function renderItemTable() {
+            const tbody = document.getElementById('item-table-body');
+            let html = '';
+            adminData.items.forEach((item, idx) => {
+                html += `<tr>
+                    <td>${item.name}</td>
+                    <td>${item.type === 'basic' ? '基础' : '成装'}</td>
+                    <td>${item.stat || '-'}</td>
+                    <td>${item.components ? item.components.map(c => '<span style="padding:2px 6px;background:#333;border-radius:4px;margin:2px;font-size:12px;">'+getItemNameById(c)+'</span>').join('+') : '-'}</td>
+                    <td><button class="btn btn-sm btn-danger" onclick="deleteItem(${idx})">删除</button></td>
+                </tr>`;
+            });
+            tbody.innerHTML = html || '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">无数据</td></tr>';
+        }
+        
+        function getItemNameById(id) {
+            const item = adminData.items.find(i => i.id === id);
+            return item ? item.name : id;
+        }
+        
+        function deleteItem(idx) {
+            if (confirm('确认删除？')) {
+                adminData.items.splice(idx, 1);
+                renderItemTable();
+                updateStats();
+            }
+        }
+        
+        function showAddItemForm() {
+            const name = prompt('输入装备名称:');
+            if (name) {
+                adminData.items.push({ id: 'item_' + Date.now(), name: name, type: 'basic', stat: '' });
+                renderItemTable();
+                updateStats();
+            }
+        }
+        
+        // ====== 羁绊管理 ======
+        function renderTraitTable() {
+            const tbody = document.getElementById('trait-table-body');
+            let html = '';
+            adminData.traits.forEach(trait => {
+                html += `<tr>
+                    <td>${trait.name}</td>
+                    <td>${trait.type === 'racial' ? '种族' : '职业'}</td>
+                    <td>${trait.levels ? trait.levels.join('/') : '-'}</td>
+                    <td style="max-width:300px;">${trait.description || '-'}</td>
+                    <td><button class="btn btn-sm btn-danger" onclick="deleteTrait('${trait.id}')">删除</button></td>
+                </tr>`;
+            });
+            tbody.innerHTML = html || '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">无数据</td></tr>';
+        }
+        
+        function deleteTrait(id) {
+            if (confirm('确认删除？')) {
+                adminData.traits = adminData.traits.filter(t => t.id !== id);
+                renderTraitTable();
+                updateStats();
+            }
+        }
+        
+        function showAddTraitForm() {
+            const name = prompt('输入羁绊名称:');
+            if (name) {
+                adminData.traits.push({ id: 'trait_' + Date.now(), name: name, type: 'racial', levels: [2], description: '' });
+                renderTraitTable();
+                updateStats();
+            }
+        }
+        
+        // ====== 符文管理 ======
+        function renderHexTable(tier) {
+            const tbody = document.getElementById('hex-table-body');
+            let html = '';
+            const tiers = tier === 'all' ? ['silver','gold','prismatic'] : [tier];
+            const tierNames = {silver:'白银',gold:'黄金',prismatic:'彩色'};
+            tiers.forEach(t => {
+                (adminData.hexes[t] || []).forEach((hex, idx) => {
+                    if (tier !== 'all' && t !== tier) return;
+                    html += `<tr>
+                        <td>${hex.name}</td>
+                        <td><span style="padding:3px 10px;border-radius:12px;font-size:12px;font-weight:bold;background:${t==='silver'?'#C0C0C0':t==='gold'?'#FFD700':'#E8EAF6'};color:#333;">${tierNames[t]}</span></td>
+                        <td>${hex.type || '-'}</td>
+                        <td style="max-width:400px;">${hex.effect || '-'}</td>
+                        <td><button class="btn btn-sm btn-danger" onclick="deleteHex('${t}',${idx})">删除</button></td>
+                    </tr>`;
+                });
+            });
+            tbody.innerHTML = html || '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">无数据</td></tr>';
+        }
+        
+        function deleteHex(tier, idx) {
+            if (confirm('确认删除？')) {
+                adminData.hexes[tier].splice(idx, 1);
+                renderHexTable(document.querySelector('#admin-hexes select').value);
+                updateStats();
+            }
+        }
+        
+        function showAddHexForm() {
+            const name = prompt('输入符文名称:');
+            if (name) {
+                const tier = prompt('输入等级 (silver/gold/prismatic):') || 'gold';
+                if (!adminData.hexes[tier]) adminData.hexes[tier] = [];
+                adminData.hexes[tier].push({ name: name, effect: '', type: 'other' });
+                renderHexTable(document.querySelector('#admin-hexes select').value);
+                updateStats();
+            }
+        }
+        
+        // ====== 英雄管理 ======
+        function renderChampionTable() {
+            const tbody = document.getElementById('champion-table-body');
+            let html = '';
+            adminData.champions.forEach((champ, idx) => {
+                html += `<tr>
+                    <td>${champ.name}</td>
+                    <td>${champ.cost}费</td>
+                    <td>${(champ.traits||[]).filter(t => {
+                        const tr = adminData.traits.find(t2 => t2.id === t);
+                        return tr && tr.type === 'racial';
+                    }).map(t => '<span style="padding:2px 6px;background:#333;border-radius:4px;margin:2px;font-size:11px;">'+getTraitName(t)+'</span>').join(' ')}</td>
+                    <td>${(champ.traits||[]).filter(t => {
+                        const tr = adminData.traits.find(t2 => t2.id === t);
+                        return tr && tr.type === 'class';
+                    }).map(t => '<span style="padding:2px 6px;background:#333;border-radius:4px;margin:2px;font-size:11px;">'+getTraitName(t)+'</span>').join(' ')}</td>
+                    <td><button class="btn btn-sm btn-danger" onclick="deleteChampion(${idx})">删除</button></td>
+                </tr>`;
+            });
+            tbody.innerHTML = html || '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">无数据</td></tr>';
+        }
+        
+        function deleteChampion(idx) {
+            if (confirm('确认删除？')) {
+                adminData.champions.splice(idx, 1);
+                renderChampionTable();
+                updateStats();
+            }
+        }
+        
+        function showAddChampionForm() {
+            const name = prompt('输入英雄名称:');
+            if (name) {
+                adminData.champions.push({ name: name, cost: 1, traits: [] });
+                renderChampionTable();
+                updateStats();
+            }
+        }
+        
+        // ====== 数据验证 ======
+        function runFullValidation() {
+            runCompValidation();
+        }
+        
+        function runCompValidation() {
+            const results = document.getElementById('validation-results');
+            let html = '<h4 style="color:var(--primary);margin-bottom:15px;">验证结果</h4>';
+            let errors = [];
+            let warnings = [];
+            
+            adminData.compositions.forEach(comp => {
+                // 检查站位是否包含所有核心英雄
+                if (comp.mainChampions && comp.position) {
+                    const allPos = [...(comp.position.front||[]), ...(comp.position.middle||[]), ...(comp.position.back||[])];
+                    comp.mainChampions.forEach(champ => {
+                        if (!allPos.includes(champ)) {
+                            errors.push(`⚠️ [${comp.name}] 核心英雄 "${champ}" 不在站位中`);
+                        }
+                    });
+                }
+                // 检查羁绊是否存在
+                if (comp.traits) {
+                    comp.traits.forEach(t => {
+                        if (!adminData.traits.find(t2 => t2.id === t)) {
+                            warnings.push(`⚠️ [${comp.name}] 羁绊 "${t}" 不在羁绊数据中`);
+                        }
+                    });
+                }
+                // 检查装备英雄是否存在
+                if (comp.equipment) {
+                    Object.keys(comp.equipment).forEach(champ => {
+                        if (!adminData.champions.find(c => c.name === champ) && !comp.mainChampions?.includes(champ)) {
+                            warnings.push(`⚠️ [${comp.name}] 装备英雄 "${champ}" 不在英雄数据中`);
+                        }
+                    });
+                }
+                // 检查必要字段
+                if (!comp.description) errors.push(`❌ [${comp.name}] 缺少描述`);
+                if (!comp.earlyGame) warnings.push(`⚠️ [${comp.name}] 缺少前期运营`);
+                if (!comp.midGame) warnings.push(`⚠️ [${comp.name}] 缺少中期运营`);
+                if (!comp.lateGame) warnings.push(`⚠️ [${comp.name}] 缺少后期运营`);
+            });
+            
+            html += `<div style="margin-bottom:15px;">
+                <span style="color:${errors.length === 0 ? 'var(--success)' : 'var(--danger)'};font-size:16px;font-weight:bold;">
+                    ❌ 错误: ${errors.length} 个
+                </span> | 
+                <span style="color:${warnings.length === 0 ? 'var(--success)' : 'var(--warning)'};font-size:16px;font-weight:bold;">
+                    ⚠️ 警告: ${warnings.length} 个
+                </span> | 
+                <span style="color:var(--success);font-size:16px;font-weight:bold;">
+                    ✅ 总阵容: ${adminData.compositions.length} 个
+                </span>
+            </div>`;
+            
+            if (errors.length > 0) {
+                html += '<div style="margin-bottom:15px;"><h5 style="color:var(--danger);margin-bottom:10px;">错误列表</h5>';
+                errors.forEach(e => html += `<div style="padding:8px;background:rgba(244,67,54,0.1);border-radius:6px;margin-bottom:5px;font-size:13px;">${e}</div>`);
+                html += '</div>';
+            }
+            if (warnings.length > 0) {
+                html += '<div><h5 style="color:var(--warning);margin-bottom:10px;">警告列表</h5>';
+                warnings.forEach(w => html += `<div style="padding:8px;background:rgba(255,152,0,0.1);border-radius:6px;margin-bottom:5px;font-size:13px;">${w}</div>`);
+                html += '</div>';
+            }
+            if (errors.length === 0 && warnings.length === 0) {
+                html += '<div style="padding:20px;background:rgba(76,175,80,0.1);border-radius:10px;"><p style="color:var(--success);">所有阵容数据完整无误！</p></div>';
+            }
+            
+            results.innerHTML = html;
+        }
+        
+        // ====== 导出数据 ======
+        function exportData() {
+            const dataStr = JSON.stringify(adminData, null, 2);
+            const blob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `jcc_s17_data_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            alert('数据导出成功！\n\n请将导出的JSON数据整合到前端 data.js 中。\n\n知识空间数据存储在浏览器 localStorage 中。');
+            // 同时保存到localStorage
+            localStorage.setItem('jcc_admin_data', dataStr);
+        }
+        
+        // 初始化
+        window.onload = function() {
+            // 尝试从data.js或localStorage加载
+            setTimeout(loadAdminData, 500);
+        };
+        
+        // 在页面加载后尝试加载data.js
+        function tryLoadDataFile() {
+            const scripts = document.querySelectorAll('script');
+            for (let s of scripts) {
+                if (s.src && s.src.includes('data.js')) {
+                    setTimeout(loadAdminData, 300);
+                    return;
+                }
+            }
+            // 如果data.js未加载，尝试从localStorage恢复
+            const saved = localStorage.getItem('jcc_admin_data');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    Object.assign(adminData, parsed);
+                    updateStats();
+                } catch(e) {}
+            }
+        }
+    </script>
+</body>
+</html>
