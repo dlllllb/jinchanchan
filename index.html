@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>金铲铲之战 - S17星神赛季阵容推荐</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部导航 -->
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-crown"></i> 金铲铲之战</h1>
+                <p class="subtitle">S17 星神赛季 · 阵容推荐助手</p>
+            </div>
+        </header>
+
+        <!-- 导航标签 -->
+        <nav class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('recommend')">
+                <i class="fas fa-magic"></i> 智能推荐
+            </button>
+            <button class="nav-tab" onclick="switchTab('compositions')">
+                <i class="fas fa-chess-board"></i> 阵容查询
+            </button>
+            <button class="nav-tab" onclick="switchTab('equipment')">
+                <i class="fas fa-shield-alt"></i> 装备图鉴
+            </button>
+            <button class="nav-tab" onclick="switchTab('season')">
+                <i class="fas fa-star"></i> 赛季信息
+            </button>
+        </nav>
+
+        <!-- 智能推荐页面 -->
+        <div id="recommend-page" class="page active">
+            <div class="page-header">
+                <h2><i class="fas fa-magic"></i> 智能阵容推荐</h2>
+                <p class="page-desc">选择本局获得的信息，系统将智能推荐最适合你的阵容（所有选项均为可选项，选得越多推荐越精准）</p>
+            </div>
+
+            <!-- 第一步：选择强化符文（下拉选择） -->
+            <div class="recommend-section">
+                <h3><i class="fas fa-scroll"></i> 第一步：选择强化符文（海克斯）</h3>
+                <p class="section-desc">从三个阶段分别选择获得的强化符文（点击符文查看详细效果）</p>
+                
+                <div class="hex-selection" style="display:flex;flex-direction:column;gap:15px;">
+                    <p style="color:var(--text-secondary);font-size:13px;margin-bottom:5px;">每局游戏可获得3次强化符文，每次的可能为：<span class="tier-badge silver" style="font-size:11px;padding:2px 10px;">白银</span> <span class="tier-badge gold" style="font-size:11px;padding:2px 10px;">黄金</span> <span class="tier-badge prismatic" style="font-size:11px;padding:2px 10px;">彩色</span></p>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;">
+                        <div class="form-group">
+                            <label style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;"><i class="fas fa-scroll"></i> 符文选择 ①</label>
+                            <select id="hex-1" class="hex-select" onchange="onHexSelect(1)" style="width:100%;padding:10px;background:var(--bg-dark);border:2px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:14px;">
+                                <option value="">未选择</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;"><i class="fas fa-scroll"></i> 符文选择 ②</label>
+                            <select id="hex-2" class="hex-select" onchange="onHexSelect(2)" style="width:100%;padding:10px;background:var(--bg-dark);border:2px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:14px;">
+                                <option value="">未选择</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;"><i class="fas fa-scroll"></i> 符文选择 ③</label>
+                            <select id="hex-3" class="hex-select" onchange="onHexSelect(3)" style="width:100%;padding:10px;background:var(--bg-dark);border:2px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:14px;">
+                                <option value="">未选择</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="hex-detail" style="display:none;background:var(--bg-dark);border-radius:8px;padding:12px;font-size:13px;color:var(--text-secondary);"></div>
+                </div>
+            </div>
+
+            <!-- 第二步：选择观星者星座（可选） -->
+            <div class="recommend-section">
+                <h3><i class="fas fa-star"></i> 第二步：选择观星者星座 <span style="font-size:12px;color:var(--text-secondary);font-weight:normal;">（可选）</span></h3>
+                <p class="section-desc">【观星者】每局游戏会观测到一个不同的星座，提供不同的强化格效果。选择本局观测到的星座让推荐更精准</p>
+                
+                <div class="form-group" style="max-width:400px;">
+                    <select id="constellation-select" onchange="onConstellationSelect()" style="width:100%;padding:12px;background:var(--bg-dark);border:2px solid var(--border-color);border-radius:10px;color:var(--text-primary);font-size:15px;">
+                        <option value="">未选择（推荐所有阵容）</option>
+                    </select>
+                </div>
+                <div id="constellation-detail" style="display:none;margin-top:12px;background:var(--bg-dark);border-radius:10px;padding:15px;border:1px solid var(--border-color);font-size:14px;color:var(--text-secondary);"></div>
+            </div>
+
+            <!-- 第三步：选择星神赐福（可选，最多2个） -->
+            <div class="recommend-section">
+                <h3><i class="fas fa-gem"></i> 第三步：选择星神赐福 <span style="font-size:12px;color:var(--text-secondary);font-weight:normal;">（可选，最多选2个）</span></h3>
+                <p class="section-desc">在2-4、3-4、4-4回合选择星神，获得独特加成。选择已获得的星神赐福，让推荐更精准</p>
+                
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:12px;">
+                    <div class="form-group">
+                        <label style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">第1个星神选择</label>
+                        <select id="stargod-1" onchange="onStarGodSelect()" style="width:100%;padding:12px;background:var(--bg-dark);border:2px solid var(--border-color);border-radius:10px;color:var(--text-primary);font-size:15px;">
+                            <option value="">未选择</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size:14px;color:var(--text-secondary);margin-bottom:8px;">第2个星神选择</label>
+                        <select id="stargod-2" onchange="onStarGodSelect()" style="width:100%;padding:12px;background:var(--bg-dark);border:2px solid var(--border-color);border-radius:10px;color:var(--text-primary);font-size:15px;">
+                            <option value="">未选择</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="stargod-tip" style="background:rgba(255,152,0,0.12);border:2px solid var(--primary);border-radius:10px;padding:15px;margin-bottom:12px;display:none;">
+                    <p style="font-size:14px;color:var(--primary);font-weight:bold;"><i class="fas fa-bolt"></i> 连续2次选择同一星神会成为「主神」，解锁专属超强赐福！</p>
+                </div>
+                
+                <div id="stargod-detail" style="display:none;background:var(--bg-dark);border-radius:10px;padding:15px;font-size:14px;color:var(--text-secondary);"></div>
+            </div>
+
+            <!-- 第四步：添加已有英雄（可选） -->
+            <div class="recommend-section">
+                <h3><i class="fas fa-chess-piece"></i> 第四步：添加已有英雄 <span style="font-size:12px;color:var(--text-secondary);font-weight:normal;">（可选）</span></h3>
+                <p class="section-desc">选择你已经获得的英雄，系统将优先推荐包含这些英雄的阵容</p>
+                
+                <div class="champion-selector">
+                    <input type="text" id="champion-search" placeholder="搜索英雄..." oninput="filterChampions()">
+                    <div class="champion-grid" id="champion-grid">
+                        <!-- 动态加载英雄 -->
+                    </div>
+                </div>
+                
+                <div class="selected-champions" id="selected-champions">
+                    <!-- 已选择的英雄 -->
+                </div>
+            </div>
+
+            <!-- 已选条件概要 -->
+            <div id="selection-summary" style="display:flex;flex-wrap:wrap;gap:8px;padding:15px;background:var(--bg-dark);border-radius:10px;margin-bottom:20px;min-height:45px;align-items:center;"></div>
+
+            <!-- 推荐结果 -->
+            <div class="recommend-result" id="recommend-result">
+                <button class="btn-recommend" onclick="generateRecommendation()">
+                    <i class="fas fa-magic"></i> 生成推荐阵容
+                </button>
+            </div>
+
+            <!-- 推荐阵容展示 -->
+            <div id="recommendation-list" class="composition-list">
+                <!-- 动态加载推荐阵容 -->
+            </div>
+        </div>
+
+        <!-- 阵容查询页面 -->
+        <div id="compositions-page" class="page">
+            <div class="page-header">
+                <h2><i class="fas fa-chess-board"></i> 阵容查询</h2>
+                <p class="page-desc">浏览所有阵容，或按条件筛选找到适合你的阵容</p>
+            </div>
+
+            <div class="search-filter">
+                <input type="text" id="comp-search" placeholder="搜索阵容或英雄..." oninput="filterCompositions()">
+                
+                <div class="filter-group">
+                    <label>梯度筛选：</label>
+                    <select id="tier-filter" onchange="filterCompositions()">
+                        <option value="">全部</option>
+                        <option value="T0">T0</option>
+                        <option value="T0.5">T0.5</option>
+                        <option value="T1">T1</option>
+                        <option value="T2">T2</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label>难度筛选：</label>
+                    <select id="difficulty-filter" onchange="filterCompositions()">
+                        <option value="">全部</option>
+                        <option value="简单">简单</option>
+                        <option value="中等">中等</option>
+                        <option value="困难">困难</option>
+                    </select>
+                </div>
+                
+                <!-- 种族羁绊筛选 -->
+                <div class="filter-group">
+                    <label>种族羁绊：</label>
+                    <div class="trait-checkboxes" id="racial-traits">
+                        <!-- 动态加载种族羁绊 -->
+                    </div>
+                </div>
+                
+                <!-- 职业羁绊筛选 -->
+                <div class="filter-group">
+                    <label>职业羁绊：</label>
+                    <div class="trait-checkboxes" id="class-traits">
+                        <!-- 动态加载职业羁绊 -->
+                    </div>
+                </div>
+            </div>
+
+            <div id="composition-list" class="composition-list">
+                <!-- 动态加载阵容 -->
+            </div>
+        </div>
+
+        <!-- 装备图鉴页面 -->
+        <div id="equipment-page" class="page">
+            <div class="page-header">
+                <h2><i class="fas fa-shield-alt"></i> 装备图鉴</h2>
+                <p class="page-desc">查看所有装备的效果和合成配方</p>
+            </div>
+
+            <div class="search-filter">
+                <input type="text" id="item-search" placeholder="搜索装备..." oninput="filterItems()">
+            </div>
+
+            <div id="item-list" class="item-list">
+                <!-- 动态加载装备 -->
+            </div>
+        </div>
+
+        <!-- 赛季信息页面 -->
+        <div id="season-page" class="page">
+            <div class="page-header">
+                <h2><i class="fas fa-star"></i> S17 星神赛季</h2>
+                <p class="page-desc">了解本赛季的新机制、新羁绊和新玩法</p>
+            </div>
+
+            <!-- 星神赐福机制 -->
+            <div class="season-section">
+                <h3><i class="fas fa-gem"></i> 星神赐福机制</h3>
+                <p>传统的"选秀"环节已被彻底取代，变成了全新的"星神领域"机制。在2-4、3-4、4-4回合，你将直面两位星神与羽饰骑士，选择一份附带基础装备的专属恩赐及一份通用馈赠。</p>
+                
+                <div class="stargod-cards" id="stargod-cards">
+                    <!-- 动态加载星神卡片 -->
+                </div>
+            </div>
+
+            <!-- 观星者星座机制 -->
+            <div class="season-section">
+                <h3><i class="fas fa-star"></i> 观星者星座机制</h3>
+                <p>【观星者】每局游戏会观测到一个不同的星座。每完成5场玩家对战，即可获得1枚观星者纹章。处于强化格上的观星者单位会获得各类属性加成。</p>
+                
+                <div class="constellation-cards" id="constellation-cards">
+                    <!-- 动态加载星座卡片 -->
+                </div>
+            </div>
+
+            <!-- 羁绊介绍 -->
+            <div class="season-section">
+                <h3><i class="fas fa-link"></i> 羁绊介绍</h3>
+                
+                <h4>种族羁绊（特质）</h4>
+                <div class="trait-cards" id="racial-trait-cards">
+                    <!-- 动态加载种族羁绊 -->
+                </div>
+                
+                <h4>职业羁绊（职业）</h4>
+                <div class="trait-cards" id="class-trait-cards">
+                    <!-- 动态加载职业羁绊 -->
+                </div>
+            </div>
+
+            <!-- 强化符文介绍 -->
+            <div class="season-section">
+                <h3><i class="fas fa-scroll"></i> 强化符文（海克斯）介绍</h3>
+                <p>强化符文在1-4、3-3、4-6回合获得，分为三个等级：</p>
+                <ul>
+                    <li><span class="tier-badge silver">白银</span> 基础效果，适合前期过渡</li>
+                    <li><span class="tier-badge gold">黄金</span> 进阶效果，适合中期发力</li>
+                    <li><span class="tier-badge prismatic">彩色</span> 强力效果，适合后期决胜</li>
+                </ul>
+                
+                <div class="hex-categories">
+                    <div class="hex-category">
+                        <h4>专属英雄强化</h4>
+                        <div class="hex-list" id="hero-hexes">
+                            <!-- 动态加载英雄强化符文 -->
+                        </div>
+                    </div>
+                    
+                    <div class="hex-category">
+                        <h4>经济运营</h4>
+                        <div class="hex-list" id="economic-hexes">
+                            <!-- 动态加载经济符文 -->
+                        </div>
+                    </div>
+                    
+                    <div class="hex-category">
+                        <h4>装备神器</h4>
+                        <div class="hex-list" id="equipment-hexes">
+                            <!-- 动态加载装备符文 -->
+                        </div>
+                    </div>
+                    
+                    <div class="hex-category">
+                        <h4>战斗增益</h4>
+                        <div class="hex-list" id="combat-hexes">
+                            <!-- 动态加载战斗符文 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 阵容详情弹窗 -->
+        <div id="composition-detail" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal()">&times;</span>
+                <div id="modal-body">
+                    <!-- 动态加载阵容详情 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <footer class="footer">
+            <p>数据来源：金铲铲之战官网、17173、游侠网、搜狐、微信公众号、小红书</p>
+            <p>更新时间：2026-05-14 | 版本：S17 星神赛季</p>
+            <p>© 2026 金铲铲阵容推荐助手 | 非官方工具</p>
+        </footer>
+    </div>
+
+    <!-- 引入JavaScript文件 -->
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
