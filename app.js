@@ -402,91 +402,134 @@ function showDetail(compId) {
     const modal = document.getElementById('composition-detail');
     const body = document.getElementById('modal-body');
 
-    // 阵容英雄
+    // ===== 完整英雄列表（从站位数据提取阵容全部英雄，去重） =====
+    let allChamps = [];
+    if (comp.position) {
+        const seen = new Set();
+        ['front', 'middle', 'back'].forEach(row => {
+            (comp.position[row] || []).forEach(c => {
+                if (!seen.has(c)) { seen.add(c); allChamps.push(c); }
+            });
+        });
+    }
+    
+    // 完整阵容显示
+    let fullRosterHTML = '';
+    if (allChamps.length > 0) {
+        fullRosterHTML = '<div style="margin:12px 0;"><div style="font-size:15px;font-weight:bold;margin-bottom:8px;"><i class="fas fa-users"></i> 完整阵容（' + allChamps.length + '人）</div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
+        allChamps.forEach(c => {
+            const cd = champions.find(x => x.name === c || c.includes(x.name));
+            const cc = cd ? ['#808080','#1e88e5','#8e24aa','#ff9800','#f44336'][cd.cost-1] : '#808080';
+            const costLabel = cd ? cd.cost : '?';
+            fullRosterHTML += '<span style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:#2a2a2a;border-radius:8px;border:2px solid ' + cc + ';font-size:13px;"><span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:' + cc + ';color:#fff;font-size:11px;font-weight:bold;">' + costLabel + '</span> ' + c + '</span>';
+        });
+        fullRosterHTML += '</div></div>';
+    }
+
+    // ===== 羁绊详情 =====
+    let traitsHTML = '';
+    if (comp.traits && comp.traits.length > 0 && typeof traits !== 'undefined') {
+        traitsHTML = '<div style="margin:12px 0;"><div style="font-size:15px;font-weight:bold;margin-bottom:10px;"><i class="fas fa-link"></i> 羁绊详情</div><div style="display:flex;flex-wrap:wrap;gap:8px;">';
+        comp.traits.forEach(tid => {
+            const t = traits.find(x => x.id === tid);
+            if (t) {
+                const desc = t.description || '';
+                const levels = t.levels ? t.levels.join('/') : '';
+                const typeLabel = t.type === 'class' ? '职业' : '种族';
+                traitsHTML += '<div style="background:#222;border-radius:8px;padding:10px;flex:1;min-width:160px;border:1px solid rgba(255,255,255,0.08);">';
+                traitsHTML += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
+                traitsHTML += '<span style="font-weight:bold;color:var(--primary);font-size:14px;">' + t.name + '</span>';
+                traitsHTML += '<span style="font-size:11px;color:var(--text-secondary);background:rgba(255,255,255,0.05);padding:2px 8px;border-radius:4px;">' + typeLabel + '</span>';
+                traitsHTML += '</div>';
+                if (levels) traitsHTML += '<div style="font-size:11px;color:#ff9800;margin-bottom:4px;">羁绊等级: ' + levels + '</div>';
+                if (desc) traitsHTML += '<div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">' + desc + '</div>';
+                traitsHTML += '</div>';
+            } else {
+                traitsHTML += '<span class="trait-tag">' + tid + '</span>';
+            }
+        });
+        traitsHTML += '</div></div>';
+    }
+
+    // ===== 核心英雄标记 =====
     let champsHTML = '';
     if (comp.mainChampions) {
-        champsHTML = '<div style="margin:10px 0;"><strong>核心英雄：</strong>';
+        champsHTML = '<div style="margin:10px 0;"><strong>⭐ 核心英雄：</strong>';
         comp.mainChampions.forEach(c => {
             const cd = champions.find(x => x.name === c || c.includes(x.name));
             const cc = cd ? ['#808080','#1e88e5','#8e24aa','#ff9800','#f44336'][cd.cost-1] : '#808080';
-            champsHTML += `<span style="display:inline-block;padding:5px 12px;background:#333;border-radius:8px;margin:3px;border:2px solid ${cc};">
-                <span style="color:${cc};font-weight:bold;">${cd ? cd.cost : '?'}费</span> ${c}
-            </span>`;
+            champsHTML += '<span style="display:inline-block;padding:5px 12px;background:#333;border-radius:8px;margin:3px;border:2px solid ' + cc + ';"><span style="color:' + cc + ';font-weight:bold;">' + (cd ? cd.cost : '?') + '费</span> ' + c + '</span>';
         });
         champsHTML += '</div>';
     }
 
-    // 站位 — 一图流风格：用色块展示每行
+    // ===== 站位—棋盘风格可视化 =====
     let posHTML = '';
     if (comp.position) {
         const rows = [
-            { key: 'front', label: '🛡️ 前排（承伤）', color: 'rgba(244,67,54,0.2)', border: '#f44336' },
-            { key: 'middle', label: '⚔️ 中排（输出）', color: 'rgba(255,152,0,0.2)', border: '#ff9800' },
-            { key: 'back', label: '🏹 后排（C位）', color: 'rgba(33,150,243,0.2)', border: '#2196f3' }
+            { key: 'front', label: '🛡️ 前排（坦克/承伤）', color: 'rgba(244,67,54,0.15)', border: '#f44336' },
+            { key: 'middle', label: '⚔️ 中排（战士/控制）', color: 'rgba(255,152,0,0.15)', border: '#ff9800' },
+            { key: 'back', label: '🏹 后排（C位/输出）', color: 'rgba(33,150,243,0.15)', border: '#2196f3' }
         ];
-        posHTML = '<div style="background:var(--bg-dark);border-radius:10px;padding:15px;margin:10px 0;">';
-        posHTML += '<div style="font-size:16px;font-weight:bold;margin-bottom:10px;"><i class="fas fa-chess-board"></i> 站位一图流</div>';
+        posHTML = '<div style="background:var(--bg-dark);border-radius:12px;padding:15px;margin:12px 0;border:1px solid rgba(255,255,255,0.05);">';
+        posHTML += '<div style="font-size:15px;font-weight:bold;margin-bottom:10px;"><i class="fas fa-chess-board"></i> 站位一图流</div>';
         rows.forEach(r => {
             const items = comp.position[r.key];
             if (!items || items.length === 0) return;
-            posHTML += `<div style="background:${r.color};border:1px solid ${r.border};border-radius:8px;padding:10px;margin-bottom:8px;">
-                <div style="font-size:12px;color:${r.border};font-weight:bold;margin-bottom:6px;">${r.label}</div>
-                <div style="display:flex;flex-wrap:wrap;gap:6px;">`;
+            posHTML += '<div style="background:' + r.color + ';border-left:3px solid ' + r.border + ';border-radius:6px;padding:10px 12px;margin-bottom:8px;">';
+            posHTML += '<div style="font-size:11px;color:' + r.border + ';font-weight:bold;text-transform:uppercase;margin-bottom:6px;">' + r.label + '</div>';
+            posHTML += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
             items.forEach(champ => {
                 const cd = champions.find(x => x.name === champ);
                 const cc = cd ? ['#808080','#1e88e5','#8e24aa','#ff9800','#f44336'][cd.cost-1] : '#808080';
-                posHTML += `<span style="padding:4px 10px;background:#222;border-radius:6px;border:1px solid ${cc};font-size:13px;">
-                    <span style="color:${cc};font-weight:bold;">${cd ? cd.cost : ''}</span> ${champ}
-                </span>`;
+                const costLabel = cd ? cd.cost : '';
+                posHTML += '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#222;border-radius:6px;border:1px solid ' + cc + ';font-size:13px;"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:' + cc + ';color:#fff;font-size:10px;font-weight:bold;">' + costLabel + '</span> ' + champ + '</span>';
             });
             posHTML += '</div></div>';
         });
         posHTML += '</div>';
     }
 
-    // C位装备推荐
+    // ===== C位装备推荐 =====
     let eqHTML = '';
     if (comp.equipment) {
-        eqHTML = '<div style="margin:10px 0;"><div style="font-size:16px;font-weight:bold;margin-bottom:10px;"><i class="fas fa-shield-alt"></i> C位装备推荐</div>';
+        eqHTML = '<div style="margin:12px 0;"><div style="font-size:15px;font-weight:bold;margin-bottom:10px;"><i class="fas fa-shield-alt"></i> C位装备推荐</div>';
         Object.entries(comp.equipment).forEach(([champ, eqs]) => {
-            eqHTML += `<div style="background:#222;border-radius:8px;padding:10px;margin-bottom:8px;">
-                <div style="font-weight:bold;margin-bottom:6px;">${champ}</div>
-                <div style="display:flex;flex-wrap:wrap;gap:6px;">`;
+            eqHTML += '<div style="background:#222;border-radius:8px;padding:10px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.05);"><div style="font-weight:bold;margin-bottom:6px;color:var(--primary);">' + champ + '</strong></div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
             eqs.forEach(eq => {
-                eqHTML += `<span style="padding:4px 10px;background:rgba(255,152,0,0.15);border-radius:6px;font-size:13px;color:var(--primary);">${eq}</span>`;
+                eqHTML += '<span style="padding:4px 10px;background:rgba(255,152,0,0.12);border-radius:6px;font-size:13px;color:#ff9800;border:1px solid rgba(255,152,0,0.3);">' + eq + '</span>';
             });
             eqHTML += '</div></div>';
         });
         eqHTML += '</div>';
     }
 
-    // 运营策略
+    // ===== 运营策略 =====
     let opHTML = '';
     if (comp.earlyGame || comp.midGame || comp.lateGame) {
-        opHTML = `<div style="margin:10px 0;"><div style="font-size:16px;font-weight:bold;margin-bottom:10px;"><i class="fas fa-chess"></i> 运营策略</div>
-            <div style="background:#222;border-radius:8px;padding:12px;">
-                <div style="margin-bottom:6px;"><span style="color:var(--success);font-weight:bold;">▸ 前期：</span>${comp.earlyGame || '无'}</div>
-                <div style="margin-bottom:6px;"><span style="color:var(--warning);font-weight:bold;">▸ 中期：</span>${comp.midGame || '无'}</div>
-                <div><span style="color:var(--danger);font-weight:bold;">▸ 后期：</span>${comp.lateGame || '无'}</div>
-            </div></div>`;
+        opHTML = '<div style="margin:12px 0;"><div style="font-size:15px;font-weight:bold;margin-bottom:10px;"><i class="fas fa-chess"></i> 运营策略</div><div style="background:#222;border-radius:8px;padding:12px;border:1px solid rgba(255,255,255,0.05);">';
+        if (comp.earlyGame) opHTML += '<div style="margin-bottom:8px;"><span style="display:inline-block;padding:2px 10px;border-radius:4px;background:rgba(76,175,80,0.2);color:#4CAF50;font-size:12px;font-weight:bold;">前期</span><span style="margin-left:8px;font-size:13px;">' + comp.earlyGame + '</span></div>';
+        if (comp.midGame) opHTML += '<div style="margin-bottom:8px;"><span style="display:inline-block;padding:2px 10px;border-radius:4px;background:rgba(255,152,0,0.2);color:#FF9800;font-size:12px;font-weight:bold;">中期</span><span style="margin-left:8px;font-size:13px;">' + comp.midGame + '</span></div>';
+        if (comp.lateGame) opHTML += '<div><span style="display:inline-block;padding:2px 10px;border-radius:4px;background:rgba(244,67,54,0.2);color:#f44336;font-size:12px;font-weight:bold;">后期</span><span style="margin-left:8px;font-size:13px;">' + comp.lateGame + '</span></div>';
+        opHTML += '</div></div>';
     }
 
-    // 推荐星神/星座/符文
+    // ===== 推荐星神/星座/符文 =====
     let extraHTML = '';
     const extras = [];
-    if (comp.starGod) extras.push(`推荐星神：${comp.starGod}`);
-    if (comp.constellation) extras.push(`推荐星座：${comp.constellation}`);
-    if (comp.hexes && comp.hexes.length > 0) extras.push(`推荐符文：${comp.hexes.join('、')}`);
+    if (comp.starGod) extras.push('<span style="color:#e040fb;">🌟 推荐星神：</span>' + comp.starGod);
+    if (comp.constellation) extras.push('<span style="color:#7c4dff;">⭐ 推荐星座：</span>' + comp.constellation);
+    if (comp.hexes && comp.hexes.length > 0) extras.push('<span style="color:#ff9800;">📜 推荐符文：</span>' + comp.hexes.join('、'));
     if (extras.length > 0) {
-        extraHTML = `<div style="margin:10px 0;padding:10px;background:#222;border-radius:8px;font-size:13px;color:var(--text-secondary);">${extras.join('<br>')}</div>`;
+        extraHTML = '<div style="margin:12px 0;padding:12px;background:#222;border-radius:8px;font-size:13px;color:var(--text-secondary);line-height:1.8;border:1px solid rgba(255,255,255,0.05);">' + extras.join('<br>') + '</div>';
     }
 
-    // 优劣势
+    // ===== 优劣势 =====
     let advHTML = '';
     if (comp.advantages || comp.disadvantages) {
-        advHTML = '<div style="margin:10px 0;display:flex;gap:10px;">';
-        if (comp.advantages) advHTML += `<div style="flex:1;padding:8px;background:rgba(76,175,80,0.1);border-radius:8px;font-size:13px;"><strong style="color:var(--success);">✔ 优势</strong><br>${comp.advantages.join('、')}</div>`;
-        if (comp.disadvantages) advHTML += `<div style="flex:1;padding:8px;background:rgba(244,67,54,0.1);border-radius:8px;font-size:13px;"><strong style="color:var(--danger);">✘ 劣势</strong><br>${comp.disadvantages.join('、')}</div>`;
+        advHTML = '<div style="margin:12px 0;display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+        if (comp.advantages) advHTML += '<div style="padding:10px;background:rgba(76,175,80,0.08);border-radius:8px;font-size:13px;border:1px solid rgba(76,175,80,0.2);"><div style="color:#4CAF50;font-weight:bold;margin-bottom:4px;">✔ 优势</div><div style="color:var(--text-secondary);">' + comp.advantages.join('、') + '</div></div>';
+        if (comp.disadvantages) advHTML += '<div style="padding:10px;background:rgba(244,67,54,0.08);border-radius:8px;font-size:13px;border:1px solid rgba(244,67,54,0.2);"><div style="color:#f44336;font-weight:bold;margin-bottom:4px;">✘ 劣势</div><div style="color:var(--text-secondary);">' + comp.disadvantages.join('、') + '</div></div>';
         advHTML += '</div>';
     }
 
@@ -496,8 +539,10 @@ function showDetail(compId) {
             <span style="padding:5px 15px;border-radius:20px;font-size:14px;font-weight:bold;color:white;background:${comp.tier==='T0'?'#f44336':comp.tier==='T0.5'?'#FF9800':'#2196F3'};">${comp.tier}</span>
         </div>
         <div style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;">难度：${comp.difficulty} | 来源：${comp.source || '未知'} | 更新：${comp.updateTime || '未知'}</div>
-        ${comp.description ? `<p style="font-size:14px;line-height:1.8;color:var(--text-secondary);margin-bottom:10px;">${comp.description}</p>` : ''}
-        <div style="margin:10px 0;">${comp.traits.map(t => `<span class="trait-tag">${getTraitName(t)}</span>`).join(' ')}</div>
+        ${comp.description ? '<p style="font-size:14px;line-height:1.8;color:var(--text-secondary);margin-bottom:10px;padding:10px;background:#222;border-radius:8px;">' + comp.description + '</p>' : ''}
+        <div style="margin:10px 0;">${comp.traits.map(t => '<span class="trait-tag">' + getTraitName(t) + '</span>').join(' ')}</div>
+        ${traitsHTML}
+        ${fullRosterHTML}
         ${champsHTML}
         ${posHTML}
         ${eqHTML}
