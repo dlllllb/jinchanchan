@@ -463,31 +463,58 @@ function showDetail(compId) {
         champsHTML += '</div>';
     }
 
-    // ===== 站位—棋盘风格可视化 =====
+    // ===== 站位—游戏棋盘网格 =====
     let posHTML = '';
     if (comp.position) {
-        const rows = [
-            { key: 'front', label: '🛡️ 前排（坦克/承伤）', color: 'rgba(244,67,54,0.15)', border: '#f44336' },
-            { key: 'middle', label: '⚔️ 中排（战士/控制）', color: 'rgba(255,152,0,0.15)', border: '#ff9800' },
-            { key: 'back', label: '🏹 后排（C位/输出）', color: 'rgba(33,150,243,0.15)', border: '#2196f3' }
+        // 将前/中/后排分配到4行棋盘（每行7格）
+        const frontList = comp.position.front || [];
+        const midList = comp.position.middle || [];
+        const backList = comp.position.back || [];
+        
+        // 分配：back→第1行, middle→第2行, front→第3-4行（平分）
+        const splitIdx = Math.ceil(frontList.length / 2);
+        const frontRow1 = frontList.slice(0, splitIdx);
+        const frontRow2 = frontList.slice(splitIdx);
+        
+        const boardRows = [
+            { label: '后排', items: backList, cls: 'back-row', color: '#2196f3' },
+            { label: '中排', items: midList, cls: 'mid-row', color: '#ff9800' },
+            { label: '前排', items: frontRow1, cls: 'front-row', color: '#f44336' },
+            { label: '前排', items: frontRow2, cls: 'front-row', color: '#f44336' }
         ];
-        posHTML = '<div style="background:var(--bg-dark);border-radius:12px;padding:15px;margin:12px 0;border:1px solid rgba(255,255,255,0.05);">';
-        posHTML += '<div style="font-size:15px;font-weight:bold;margin-bottom:10px;"><i class="fas fa-chess-board"></i> 站位一图流</div>';
-        rows.forEach(r => {
-            const items = comp.position[r.key];
-            if (!items || items.length === 0) return;
-            posHTML += '<div style="background:' + r.color + ';border-left:3px solid ' + r.border + ';border-radius:6px;padding:10px 12px;margin-bottom:8px;">';
-            posHTML += '<div style="font-size:11px;color:' + r.border + ';font-weight:bold;text-transform:uppercase;margin-bottom:6px;">' + r.label + '</div>';
-            posHTML += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
-            items.forEach(champ => {
-                const cd = champions.find(x => x.name === champ);
-                const cc = cd ? ['#808080','#1e88e5','#8e24aa','#ff9800','#f44336'][cd.cost-1] : '#808080';
-                const costLabel = cd ? cd.cost : '';
-                posHTML += '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#222;border-radius:6px;border:1px solid ' + cc + ';font-size:13px;"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:' + cc + ';color:#fff;font-size:10px;font-weight:bold;">' + costLabel + '</span> ' + champ + '</span>';
-            });
-            posHTML += '</div></div>';
+        
+        posHTML = '<div class="hex-board"><div class="hex-board-title"><i class="fas fa-chess-board"></i> 棋盘站位</div><div class="hex-grid">';
+        
+        boardRows.forEach((row, ri) => {
+            const items = row.items;
+            const totalCells = 7;
+            const startCol = Math.floor((totalCells - items.length) / 2);
+            
+            posHTML += '<div class="hex-row' + (ri % 2 === 1 ? ' offset' : '') + '">';
+            for (let c = 0; c < totalCells; c++) {
+                const champIdx = c - startCol;
+                if (champIdx >= 0 && champIdx < items.length) {
+                    const champ = items[champIdx];
+                    const cd = champions.find(x => x.name === champ || (x.name && champ.includes(x.name)));
+                    const cc = cd ? ['#808080','#1e88e5','#8e24aa','#ff9800','#f44336'][cd.cost-1] : '#666';
+                    const costLabel = cd ? cd.cost : '?';
+                    posHTML += '<div class="hex-cell ' + row.cls + '" style="background:linear-gradient(135deg,' + cc + '55,' + cc + '22);border:2px solid ' + cc + '80;" title="' + row.label + ' - ' + champ + '">';
+                    posHTML += '<div class="champ-icon" style="background:' + cc + ';">' + costLabel + '</div>';
+                    posHTML += '<div class="champ-name">' + champ + '</div>';
+                    posHTML += '</div>';
+                } else {
+                    posHTML += '<div class="hex-cell empty" style="border:1px dashed rgba(255,255,255,0.06);"></div>';
+                }
+            }
+            posHTML += '</div>';
         });
-        posHTML += '</div>';
+        
+        // 行标签
+        posHTML += '<div style="display:flex;justify-content:center;gap:20px;margin-top:10px;">';
+        posHTML += '<span style="font-size:11px;color:#f44336;">🛡️ 前排</span>';
+        posHTML += '<span style="font-size:11px;color:#ff9800;">⚔️ 中排</span>';
+        posHTML += '<span style="font-size:11px;color:#2196f3;">🏹 后排</span>';
+        posHTML += '</div></div></div>';
     }
 
     // ===== C位装备推荐 =====
